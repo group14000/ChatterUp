@@ -5,9 +5,9 @@ import api from "../../utils/api";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const formFields = [
-  { id: "name", label: "Name", type: "text" },
-  { id: "email", label: "Email", type: "text" },
-  { id: "password", label: "Password", type: "password" },
+  { id: "name", label: "Name", type: "text", placeholder: "Enter your name" },
+  { id: "email", label: "Email", type: "email", placeholder: "Enter your email" },
+  { id: "password", label: "Password", type: "password", placeholder: "Enter your password" },
 ];
 
 const Register = () => {
@@ -18,6 +18,7 @@ const Register = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     setFormData({
@@ -26,13 +27,36 @@ const Register = () => {
     });
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    // Check if fields are empty
+    formFields.forEach(({ id, label }) => {
+      if (!formData[id]) {
+        newErrors[id] = `${label} is required`;
+      }
+    });
+
+    // Check password criteria
+    const password = formData.password;
+    const passwordCriteria = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (password && !passwordCriteria.test(password)) {
+      newErrors.password = "Password must be at least 8 characters long and include one uppercase letter, one lowercase letter, one number, and one special character.";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post(`${api}api/auth/register`, formData);
-      console.log("Registration successful:", response.data);
-    } catch (error) {
-      console.error("Error during registration:", error);
+    if (validateForm()) {
+      try {
+        const response = await axios.post(`${api}api/auth/register`, formData);
+        console.log("Registration successful:", response.data);
+      } catch (error) {
+        console.error("Error during registration:", error);
+      }
     }
   };
 
@@ -51,7 +75,7 @@ const Register = () => {
           Create an account
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-          {formFields.map(({ id, label, type }) => (
+          {formFields.map(({ id, label, type, placeholder }) => (
             <div key={id} className="relative">
               <label
                 htmlFor={id}
@@ -63,10 +87,15 @@ const Register = () => {
                 type={id === "password" && showPassword ? "text" : type}
                 name={id}
                 id={id}
+                placeholder={placeholder}
                 value={formData[id]}
                 onChange={handleChange}
                 className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                required
               />
+              {errors[id] && (
+                <p className="text-red-500 text-sm mt-1">{errors[id]}</p>
+              )}
               {id === "password" && (
                 <span
                   onClick={togglePasswordVisibility}
@@ -86,7 +115,7 @@ const Register = () => {
           <p className="text-sm font-light text-gray-500 dark:text-gray-400">
             Already have an account?{" "}
             <Link
-              to="/login"
+              to="/"
               className="font-medium text-primary-600 hover:underline dark:text-primary-500"
             >
               Login

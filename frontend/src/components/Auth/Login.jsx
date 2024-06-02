@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import api from "../../utils/api";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -14,8 +14,10 @@ const Login = () => {
     email: "",
     password: "",
   });
-  
+
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({
@@ -23,22 +25,38 @@ const Login = () => {
       [e.target.name]: e.target.value,
     });
   };
-  
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    formFields.forEach(({ id, label }) => {
+      if (!formData[id]) {
+        newErrors[id] = `${label} is required`;
+      }
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post(`${api}api/auth/login`, formData);
-
-      console.log("Registration successful:", response.data);
-    } catch (error) {
-      console.error("Error during registration:", error);
+    if (validateForm()) {
+      try {
+        const response = await axios.post(`${api}api/auth/login`, formData);
+        console.log("Login successful:", response.data);
+        navigate("/chat");
+      } catch (error) {
+        console.error("Error during login:", error);
+        setErrors({ general: "Login failed. Please check your credentials." });
+      }
     }
   };
 
   const togglePasswordVisibility = () => {
     setShowPassword((prevState) => !prevState);
   };
-  
+
   return (
     <section className="bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center px-6 py-8">
       <div className="w-full max-w-md space-y-6 bg-white rounded-lg shadow dark:bg-gray-800 dark:border-gray-700 p-6 sm:p-8">
@@ -65,8 +83,12 @@ const Login = () => {
                 value={formData[id]}
                 onChange={handleChange}
                 className="bg-gray-50 border border-gray-300 text-gray-900 rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                required
               />
-               {id === "password" && (
+              {errors[id] && (
+                <p className="text-red-500 text-sm mt-1">{errors[id]}</p>
+              )}
+              {id === "password" && (
                 <span
                   onClick={togglePasswordVisibility}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center justify-center cursor-pointer mt-6"
@@ -82,10 +104,13 @@ const Login = () => {
           >
             Login
           </button>
+          {errors.general && (
+            <p className="text-red-500 text-sm mt-2">{errors.general}</p>
+          )}
           <p className="text-sm font-light text-gray-500 dark:text-gray-400">
             Do not have an account?{" "}
             <Link
-              to="/"
+              to="/signup"
               className="font-medium text-primary-600 hover:underline dark:text-primary-500"
             >
               Create an account
